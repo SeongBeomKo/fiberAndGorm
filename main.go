@@ -33,7 +33,10 @@ func main() {
 
 	entitiesAPI := app.Group("/entities")
 	entitiesAPI.Get("/", entitiesList)
-
+	entitiesAPI.Get("/:id", entitiesGet)
+	entitiesAPI.Post("/", entitiesPost)
+	entitiesAPI.Put("/", entitiesUpdate)
+	entitiesAPI.Delete("/:id", entitiesDelete)
 	app.Listen(":8080")
 }
 
@@ -52,4 +55,66 @@ func entitiesList(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(errMsg)
 	}
 	return c.JSON(entities)
+}
+
+func entitiesGet(c *fiber.Ctx) error {
+	// paging
+	entityId := c.Params("id")
+
+	entity, err := entitiesRepo.Get(entityId)
+	// 없는페이지면 에러메시지와 404로 응답
+	if err != nil {
+		errMsg := pkg.TextResponse{Message: err.Error()}
+		return c.Status(fiber.StatusNotFound).JSON(errMsg)
+	}
+	return c.JSON(entity)
+}
+
+func entitiesPost(c *fiber.Ctx) error {
+	var entity pkg.Entity
+
+	err := c.BodyParser(&entity)
+	if err != nil {
+		errMsg := pkg.TextResponse{Message: err.Error()}
+		return c.Status(fiber.StatusBadRequest).JSON(errMsg)
+	}
+
+	err = entitiesRepo.Add(&entity)
+	if err != nil {
+		errMsg := pkg.TextResponse{Message: err.Error()}
+		return c.Status(fiber.StatusBadRequest).JSON(errMsg)
+	}
+
+	return c.JSON(entity)
+}
+
+func entitiesUpdate(c *fiber.Ctx) error {
+	var entity pkg.Entity
+
+	err := c.BodyParser(&entity)
+	if err != nil {
+		errMsg := pkg.TextResponse{Message: err.Error()}
+		return c.Status(fiber.StatusBadRequest).JSON(errMsg)
+	}
+
+	err = entitiesRepo.Update(&entity)
+	if err != nil {
+		errMsg := pkg.TextResponse{Message: err.Error()}
+		return c.Status(fiber.StatusBadRequest).JSON(errMsg)
+	}
+
+	return c.JSON(entity)
+}
+
+func entitiesDelete(c *fiber.Ctx) error {
+
+	entityId := c.Params("id")
+
+	err := entitiesRepo.Delete(entityId)
+	// 없는페이지면 에러메시지와 404로 응답
+	if err != nil {
+		errMsg := pkg.TextResponse{Message: err.Error()}
+		return c.Status(fiber.StatusBadRequest).JSON(errMsg)
+	}
+	return c.JSON(pkg.TextResponse{Message: "entity deleted"})
 }
